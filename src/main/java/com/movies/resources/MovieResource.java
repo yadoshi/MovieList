@@ -43,4 +43,11 @@ public class MovieResource {
                 .map(movie -> Response.ok(movie).build())
                 .orElse(Response.status(NOT_FOUND).build());
     }
+
+    @GET
+    @Path("country/{country}")
+    public Response getByCountry(@PathParam("country") String country){
+        List<Movie> movies = movieRepository.findByCountry(country);
+        return Response.ok(movies).build();
+    }
 }
