@@ -33,4 +33,14 @@ public class MovieResource {
                 .map(movie -> Response.ok(movie).build())
                 .orElse(Response.status(NOT_FOUND).build());
     }
+
+    @GET
+    @Path("title/{title}")
+    public Response getByTitle(@PathParam("title") String title){
+        return movieRepository
+                .find("title", title)
+                .singleResultOptional()
+                .map(movie -> Response.ok(movie).build())
+                .orElse(Response.status(NOT_FOUND).build());
+    }
 }
