@@ -3,13 +3,16 @@ package com.movies.entities;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 @Entity
+@Schema(name = "Movie", description = "Movie representation")
 public class Movie {
 
     @Id
     @GeneratedValue
     private Long id;
+    @Schema(required = true)
     private String title;
     private String description;
     private String director;
