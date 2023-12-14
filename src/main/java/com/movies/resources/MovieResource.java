@@ -3,6 +3,7 @@ package com.movies.resources;
 import com.movies.entities.Movie;
 import com.movies.repository.MovieRepository;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -15,6 +16,7 @@ import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 import javax.swing.text.html.Option;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -30,10 +32,7 @@ public class MovieResource {
 
     @Inject
     MovieRepository movieRepository;
-    public static List<Movie> movies = new ArrayList<>();
-
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getMovies",
             summary = "Get Movies",
@@ -44,21 +43,32 @@ public class MovieResource {
             description = "Operation completed",
             content = @Content(mediaType = MediaType.APPLICATION_JSON)
     )
-    public Response getMovies(){
+    public Response getAll(){
+        List <Movie> movies = movieRepository.listAll();
         return Response.ok(movies).build();
     }
 
     @GET
     @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getById(@PathParam("id") Long id){
         return movieRepository
                 .findByIdOptional(id)
-                .map(movie -> Response.ok(movies).build())
+                .map(movie -> Response.ok(movie).build())
                 .orElse(Response.status(NOT_FOUND).build());
     }
 
     @GET
+    @Path("country/{country}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getByCountry(@PathParam("country") String country){
+        List <Movie> result = movieRepository.findByCountry(country);
+        return Response.ok(result).build();
+    }
+
+    @GET
     @Path("title/{title}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getByTitle(@PathParam("title") String title){
         return movieRepository
                 .find("title", title)
@@ -81,17 +91,12 @@ public class MovieResource {
             content = @Content(mediaType = MediaType.TEXT_PLAIN)
     )
     public Integer countMovies(){
+        List<Movie> movies = movieRepository.listAll();
         return movies.size();
     }
 
-    @GET
-    @Path("country/{country}")
-    public Response getByCountry(@PathParam("country") String country){
-        List<Movie> movies = movieRepository.findByCountry(country);
-        return Response.ok(movies).build();
-    }
-
     @POST
+    @Transactional
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(
@@ -110,9 +115,12 @@ public class MovieResource {
                     required = true,
                     content = @Content(schema = @Schema(implementation = Movie.class))
             )
-            Movie newMovie){
-        movies.add(newMovie);
-        return Response.status(Response.Status.CREATED).entity(movies).build();
+            Movie movie){
+        movieRepository.persist(movie);
+        if (movieRepository.isPersistent(movie)){
+            return Response.created(URI.create("/movies" + movie.getId())).build();
+        }
+        return Response.status(Response.Status.BAD_REQUEST).build();
     }
 
     @PUT
@@ -129,27 +137,25 @@ public class MovieResource {
             description = "Movie updated",
             content = @Content(mediaType = MediaType.APPLICATION_JSON)
     )
-    public Response updateMovie(
+    public Response updateMovieById(
             @Parameter(
                     description = "Movie id",
                     required = true
             )
             @PathParam("id") Long id,
-            @Parameter(
-                    description = "Movie title",
-                    required = true
-            )
-            @PathParam("title") String title){
-        movies = movies.stream().map(movie -> {
-            if (movie.getId().equals(id)){
-                movie.setTitle(title);
-            }
-            return movie;
-        }).collect(Collectors.toList());
-        return Response.ok(movies).build();
+            Movie movie){
+        return movieRepository
+                .findByIdOptional(id)
+                .map(
+                      m -> {
+                          m.setTitle(movie.getTitle());
+                          return Response.ok(m).build();
+                      })
+                .orElse(Response.status(NOT_FOUND).build());
     }
 
     @DELETE
+    @Transactional
     @Path("{id}")
     @Consumes(MediaType.TEXT_PLAIN)
     @Operation(
@@ -167,18 +173,12 @@ public class MovieResource {
             description = "Movie not valid",
             content = @Content(mediaType = MediaType.APPLICATION_JSON)
     )
-    public Response deleteMovie(
+    public Response deleteById(
             @PathParam("id") Long id){
-        Optional<Movie> movieToDelete = movies.stream().filter(movie -> movie.getId().equals(id))
-                .findFirst();
-        boolean removed = false;
-        if (movieToDelete.isPresent()){
-            removed = movies.remove(movieToDelete.get());
-        }
-        if (removed){
-            return Response.noContent().build();
-        }
-        return Response.status(Response.Status.BAD_REQUEST).build();
+        boolean deleted = movieRepository.deleteById(id);
+
+        return deleted ? Response.noContent().build() :
+                Response.status(Response.Status.BAD_REQUEST).build();
     }
 
 }
