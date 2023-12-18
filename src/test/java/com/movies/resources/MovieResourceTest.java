@@ -61,7 +61,7 @@ public class MovieResourceTest {
     }
 
     @Test
-    void getById(){
+    void getByIdOK(){
         when(movieRepository.findByIdOptional(1L)).thenReturn(Optional.of(movie));
 
         Response response = movieResource.getById(1L);
@@ -87,7 +87,7 @@ public class MovieResourceTest {
     }
 
     @Test
-    void getByTitle(){
+    void getByTitleOK(){
 
         PanacheQuery<Movie> query = Mockito.mock(PanacheQuery.class);
         when(query.page(Mockito.any())).thenReturn(query);
@@ -120,5 +120,26 @@ public class MovieResourceTest {
         assertNotNull(response);
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
         assertNull(response.getEntity());
+    }
+
+    @Test
+    void getByCountry(){
+        List<Movie> movies = new ArrayList<>();
+        movies.add(movie);
+        when(movieRepository.findByCountry("Pantano")).thenReturn(movies);
+
+        Response response = movieResource.getByCountry("Pantano");
+
+        List<Movie> entity = (List<Movie>) response.getEntity();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertNotNull(response.getEntity());
+        assertFalse(entity.isEmpty());
+        assertEquals("Shrek", entity.get(0).getTitle());
+        assertEquals(1L, entity.get(0).getId());
+        assertEquals("Pantano", entity.get(0).getCountry());
+        assertEquals("ShrekDesc", entity.get(0).getDescription());
+        assertEquals("Gato de botas", entity.get(0).getDirector());
     }
 }
