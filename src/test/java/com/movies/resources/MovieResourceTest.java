@@ -7,9 +7,12 @@ import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.RestResponse;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatcher;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
@@ -17,8 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @QuarkusTest
 public class MovieResourceTest {
@@ -141,5 +143,50 @@ public class MovieResourceTest {
         assertEquals("Pantano", entity.get(0).getCountry());
         assertEquals("ShrekDesc", entity.get(0).getDescription());
         assertEquals("Gato de botas", entity.get(0).getDirector());
+    }
+
+    @Test
+    void createMovieOK(){
+
+        doNothing().when(movieRepository).persist(
+                ArgumentMatchers.any(Movie.class)
+        );
+        when(movieRepository.isPersistent(
+                ArgumentMatchers.any(Movie.class)
+        )).thenReturn(true);
+
+        Movie newMovie = new Movie();
+        newMovie.setTitle("Filme2");
+        newMovie.setDescription("O filme 2");
+        newMovie.setCountry("Planeta");
+        newMovie.setDirector("Eu");
+        newMovie.setId(2L);
+        Response response = movieResource.createMovie(newMovie);
+        assertNotNull(response);
+        assertEquals(RestResponse.Status.CREATED.getStatusCode(), response.getStatus());
+        assertNotNull(response.getLocation());
+    }
+
+    @Test
+    void createMoveKO(){
+
+        doNothing().when(movieRepository).persist(
+                ArgumentMatchers.any(Movie.class)
+        );
+        when(movieRepository.isPersistent(
+                ArgumentMatchers.any(Movie.class)
+        )).thenReturn(false);
+
+        Movie newMovie = new Movie();
+        newMovie.setTitle("Filme2");
+        newMovie.setDescription("O filme 2");
+        newMovie.setCountry("Planeta");
+        newMovie.setDirector("Eu");
+        newMovie.setId(2L);
+        Response response = movieResource.createMovie(newMovie);
+        assertNotNull(response);
+        assertEquals(RestResponse.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertNull(response.getEntity());
+        assertNull(response.getLocation());
     }
 }
