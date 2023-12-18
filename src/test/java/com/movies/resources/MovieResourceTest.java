@@ -168,7 +168,7 @@ public class MovieResourceTest {
     }
 
     @Test
-    void createMoveKO(){
+    void createMovieKO(){
 
         doNothing().when(movieRepository).persist(
                 ArgumentMatchers.any(Movie.class)
