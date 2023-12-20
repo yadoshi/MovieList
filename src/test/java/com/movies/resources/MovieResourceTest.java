@@ -189,4 +189,51 @@ public class MovieResourceTest {
         assertNull(response.getEntity());
         assertNull(response.getLocation());
     }
+
+    @Test
+    void updateByIdOK(){
+        Movie updatedMovie = new Movie();
+        updatedMovie.setTitle("Azul");
+        when(movieRepository.findByIdOptional(1L)).thenReturn(Optional.of(movie));
+
+        Response response = movieResource.updateMovieById(1L, updatedMovie );
+        Movie entity = (Movie) response.getEntity();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertNotNull(response.getEntity());
+        assertEquals("Azul", entity.getTitle());
+        assertEquals(1L, entity.getId());
+    }
+    @Test
+    void updateByIdKO(){
+
+        when(movieRepository.findByIdOptional(1L)).thenReturn(Optional.empty());
+
+        Response response = movieResource.updateMovieById(1L, new Movie());
+        Movie entity = (Movie) response.getEntity();
+
+        assertNotNull(response);
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        assertNull(response.getEntity());
+    }
+
+    @Test
+    void deleteByIdOK(){
+        when(movieRepository.deleteById(1L)).thenReturn(true);
+        Response response = movieResource.deleteById(1L);
+        assertNotNull(response);
+        assertEquals(Response.Status.NO_CONTENT.getStatusCode(), response.getStatus());
+        assertNull(response.getEntity());
+    }
+
+    @Test
+    void deleteByIdKO(){
+        when(movieRepository.deleteById(1L)).thenReturn(false);
+        Response response = movieResource.deleteById(1L);
+        assertNotNull(response);
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        assertNull(response.getEntity());
+    }
 }
+

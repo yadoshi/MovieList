@@ -178,7 +178,7 @@ public class MovieResource {
         boolean deleted = movieRepository.deleteById(id);
 
         return deleted ? Response.noContent().build() :
-                Response.status(Response.Status.BAD_REQUEST).build();
+                Response.status(NOT_FOUND).build();
     }
 
 }
